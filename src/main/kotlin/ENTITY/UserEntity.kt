@@ -1,3 +1,5 @@
 package org.example.ENTITY
 
-data class UserEntity()
+import java.util.*
+
+data class UserEntity(var id: UUID = UUID.randomUUID(), var name: String, var email: String)
