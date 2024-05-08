@@ -1,25 +1,41 @@
 package org.example.DAO
 
 import org.example.ENTITY.UserEntity
+import org.example.OUTPUT.Console
+import java.sql.SQLException
 import java.util.*
 import javax.sql.DataSource
 
 class UserDAOH2(private val dataSource: DataSource) : IUserDAO {
 
-    override fun create(user: UserEntity): UserEntity {
+    private val console = Console()
+
+    override fun create(user: UserEntity): UserEntity? {
         val sql = "INSERT INTO tuser (id, name, email) VALUES (?, ?, ?)"
-        return dataSource.connection.use { conn ->
-            conn.prepareStatement(sql).use { stmt ->
-                stmt.setString(1, user.id.toString())
-                stmt.setString(2, user.name)
-                stmt.setString(3, user.email)
-                user
+        return try {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(sql).use { stmt ->
+                    stmt.setString(1, user.id.toString())
+                    stmt.setString(2, user.name)
+                    stmt.setString(3, user.email)
+                    val rs = stmt.executeUpdate()
+                    if (rs ==1){
+                        user
+                    }
+                    else{
+                        console.showMessage("-- ERROR AL CREAR EL USUARIO --", true)
+                        null
+                    }
+                }
             }
+        }catch (e:SQLException){
+            console.showMessage("-- ERROR AL CREAR EL USUARIO --", true)
+            return null
         }
     }
 
     override fun getById(id: UUID): UserEntity? {
-        val sql = "SELECT * FROM tuser WHERE id = ?"
+        val sql = "SELECT * FROM tuser WHERE id = (?)"
         return dataSource.connection.use { conn ->
             conn.prepareStatement(sql).use { stmt ->
                 stmt.setString(1, id.toString())
@@ -31,6 +47,7 @@ class UserDAOH2(private val dataSource: DataSource) : IUserDAO {
                         email = rs.getString("email")
                     )
                 } else {
+                    console.showMessage("-- ERROR AL OBTENER EL USUARIO --", true)
                     null
                 }
             }
@@ -57,35 +74,39 @@ class UserDAOH2(private val dataSource: DataSource) : IUserDAO {
         }
     }
 
-    override fun update(user: UserEntity):UserEntity {
+    override fun update(user: UserEntity):UserEntity? {
         val sql = "UPDATE tuser SET name = ?, email = ? WHERE id = ?"
-        return dataSource.connection.use { conn ->
-            conn.prepareStatement(sql).use { stmt ->
-                stmt.setString(1, user.name)
-                stmt.setString(2, user.email)
-                stmt.setString(3, user.id.toString())
-                stmt.executeUpdate()
-                user
+        return try {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(sql).use { stmt ->
+                    stmt.setString(1, user.name)
+                    stmt.setString(2, user.email)
+                    stmt.setString(3, user.id.toString())
+                    stmt.executeUpdate()
+                    user
+                }
             }
+        }catch (e:SQLException){
+            console.showMessage("-- ERROR AL ACTUALIZAR LA BASE DE DATOS", true)
+            null
         }
     }
 
-    override fun delete(id: UUID) {
+    override fun delete(id: UUID): Boolean {
         val sql = "DELETE FROM tuser WHERE id = ?"
-        dataSource.connection.use { conn ->
-            conn.prepareStatement(sql).use { stmt ->
-                stmt.setString(1, id.toString())
-                stmt.executeUpdate()
+        try {
+            dataSource.connection.use { conn ->
+                conn.prepareStatement(sql).use { stmt ->
+                    stmt.setString(1, id.toString())
+                    stmt.executeUpdate()
+                    true
+                }
             }
+        } catch (e: SQLException) {
+            console.showMessage("-- ERROR AL BORRAR EL USUARIO --", true)
+            return false
         }
+        return false
     }
 }
 
-
-interface UserService {
-    fun create(user: UserEntity): UserEntity
-    fun getById(id: UUID): UserEntity?
-    fun update(user: UserEntity): UserEntity
-    fun delete(id: UUID)
-    fun getAll(): List<UserEntity>
-}

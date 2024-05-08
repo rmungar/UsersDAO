@@ -6,7 +6,7 @@ import java.util.*
 
 class UserServiceImpl(private val userDao: IUserDAO) : IUserService {
     override fun create(user: UserEntity): UserEntity {
-        return userDao.create(user)
+        return userDao.create(user)!!
     }
 
     override fun getById(id: UUID): UserEntity? {
@@ -14,7 +14,7 @@ class UserServiceImpl(private val userDao: IUserDAO) : IUserService {
     }
 
     override fun update(user: UserEntity): UserEntity {
-        return userDao.update(user)
+        return userDao.update(user)!!
     }
 
     override fun delete(id: UUID) {
